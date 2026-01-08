@@ -12,7 +12,7 @@ def get_db():
     try:
         yield db
     finally:
-        db.close
+        db.close()
 
 # create a new blog
 @app.post('/blog', status_code=status.HTTP_201_CREATED)
@@ -22,6 +22,35 @@ def create(request: schemas.Blog, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_blog)
     return new_blog
+
+# delete a blog
+@app.delete('/blog/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def destroy(id, db: Session = Depends(get_db)):
+    db.query(models.Blog).filter(models.Blog.id == id).delete(synchronize_session=False)
+    db.commit()
+    return 'done'
+
+# update a blog
+@app.put('/blog/{id}', status_code=status.HTTP_202_ACCEPTED)
+def update(id: int, request: schemas.Blog, db: Session = Depends(get_db)):
+    blog = db.query(models.Blog).filter(models.Blog.id == id).first()
+
+    if not blog:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Blog with id {id} not found"
+        )
+
+    for key, value in request.model_dump().items():
+        setattr(blog, key, value)
+
+    db.commit()
+    db.refresh(blog)
+    return blog
+
+
+
+
 
 # get all blog
 @app.get('/blog')
