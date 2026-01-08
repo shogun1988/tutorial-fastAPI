@@ -1,3 +1,7 @@
 fastapi
 uvicorn
 SQLAlchemy
+passlib
+bcrypt
+PyJWT
+pwdlib[argon2]

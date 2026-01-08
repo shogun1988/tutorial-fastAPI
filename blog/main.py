@@ -3,6 +3,8 @@ from . import schemas, models
 from .database import engine, SessionLocal
 from sqlalchemy.orm import Session
 from typing import List
+from passlib.context import CryptContext
+from pwdlib import PasswordHash
 
 app = FastAPI()
 
@@ -67,10 +69,13 @@ def show(id, response: Response, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"blog with id {id} is not found")        
     return blog
 
+pwd_cxt = PasswordHash.recommended()
+
 # create an user
 @app.post('/user')
-def create_user(request: schemas.User, db: Session = Depends(get_db)):
-    new_user = models.User(name=request.name, email=request.email, password=request.password)
+def create_user(request: schemas.User, db: Session = Depends(get_db)):   
+    hashedPassword = pwd_cxt.hash(request.password)
+    new_user = models.User(name=request.name, email=request.email, password=hashedPassword)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
